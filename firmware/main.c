@@ -1,6 +1,47 @@
-// My unit has M328p, 750R and 500K.
-// also has very slow LCD 
-// 
+/*
+
+    ///////////////////////////////////////////////////
+   ///////////////// AVR Component Tester ////////////
+  //////////////////    Version 1 beta    ///////////
+ ///////////////////////////////////////////////////
+
+ AVR Component Tester
+ Version 1.0 BETA
+
+ This project is based on the original 'AVR Transistor Tester' and will be
+ modified for a small group of people interested in expanding this project.
+ The original project can be found:
+ 
+ http://www.mikrocontroller.net/articles/AVR-Transistortester
+ 
+ This new project (ACT for short) does not have its own website; but it does
+ have its own google project page which includes news, wiki, bug tracking,
+ and a publicly viewable SVN; where you can always find the latest source
+ files and other resources such as: Schematics, PCB files; and even pre-
+ compiled gerbers, if you want to get your own PCB(s) designed. The gerbers
+ are already completed and designed to work with SEEED Studio's PCB rules and
+ formats. See www.seeedstudios.com for more information on there 'Fusion PCB
+ service'.
+
+ Main Project Developers:
+ BrentBXR (@Gmail.com)
+ MickM
+ 
+ We also have a related forum thread at DangerousPrototypes, there you can see
+ where it all started, and where we are now with this project. Find it here:
+ 
+ http://dangerousprototypes.com/forum/viewtopic.php?f=19&t=3260
+ 
+ This is a open hardware project; which means everything about it from the source
+ files, down to the schematics and pcb files are all open source and public domain
+ you are welcome to use, modify, sell, or anything without issue. It is common
+ curtosy to atleast let us know what your doing with our project if you use it.
+ it is also common that if you decide to replicate and sell; that you atleast tell
+ us... that said you dont have to tell us anything :P
+ 
+                                                                   [BrentBXR]
+*/
+
 #include <avr/io.h>
 #include "lcd-routines.h"
 #include "swuart.h"
@@ -14,8 +55,9 @@
 
 #define MCU_STATUS_REG MCUCR
 
+// *########################################################################################
 
-// ########################################################################################
+// Defined Settings 
 #define ADC_PORT PORTC							// Use port C for A to D inputs
 #define ADC_DDR DDRC
 #define ADC_PIN PINC
@@ -23,6 +65,7 @@
 #define TP2 PC1								// AVR pin 24 probe.
 #define TP3 PC2								// AVR pin 25 probe.
 
+#define WDT_enabled  							// Watchdog active for normal use, disable for debug
 									// MickM defines, set with 9.00V DC input from a bench PS.
 #define SMALL_CAP_VALUE 218						// 218  0xDA    Adjust for accuracy on big Caps with 750R, was 394
 #define LARGE_CAP_VALUE 167						// 167  0xA7    Adjust for accuracy, small Caps with 500K, was 283
@@ -57,11 +100,11 @@
                                                                         // 
 
 	uint8_t CapTestMode EEMEM = 0b00100010;				// 34 0x22, last used EEPROM address 0x15A, Cap test type, pins to use
-									// DEFAULT  0x22 = All 6 Cap Tests, 1st 0, 2nd 2
+														// DEFAULT  0x22 = All 6 Cap Tests, 1st 0, 2nd 2
 
-	uint8_t RFU1 EEMEM = 0;						// 0x00 Reserve 3 EEPROM byte for future use
-	uint8_t RFU2 EEMEM = 0;						// 0x00
-	uint8_t RFU3 EEMEM = 0;						// 0x00
+	uint8_t RFU1 EEMEM = 0;						// 0x00 [RESERVED EEPROM SPACE]
+	uint8_t RFU2 EEMEM = 0;						// 0x00 [RESERVED EEPROM SPACE]
+	uint8_t RFU3 EEMEM = 0;						// 0x00 [RESERVED EEPROM SPACE]
 
 	unsigned int R_L_VAL EEMEM = SMALL_R_VALUE;			// R_L; 750 0x2EE
 	unsigned int R_H_VAL EEMEM = LARGE_R_VALUE;			// R_H; 5000 0x1388
@@ -73,47 +116,44 @@
 
 // *########################################################################################
 
-/* Strings in the EEPROM When adding far languages all stringers with 
-" must; € " - Indication (ASCII 0x80) on same length to be brought, 
-otherwise there are problems with the LCD announcement with the different languages!
-*/
-									// LCD words and messages
-	unsigned char StartupMessage[]	EEMEM = "Part Tester v1a";
-	unsigned char TestRunning[]     EEMEM = "Testing ...€€€€€€";
-	unsigned char Bat[]             EEMEM = "Battery €";
-	unsigned char BatWeak[]         EEMEM = "weak€€€";
-	unsigned char BatEmpty[]        EEMEM = "empty!€€";
-	unsigned char TestFailed1[]     EEMEM = "No, unknown, or€";
-	unsigned char TestFailed2[]     EEMEM = "damaged €€€€";
-	unsigned char Bauteil[]         EEMEM = "part€€€€€€";
-	unsigned char Unknown[]         EEMEM = " unknown€";
+// Strings [Stored in EEPROM to conserve program space]
+
+	// Words, messages, and strings:
+	unsigned char StartupMessage[]	EEMEM = "ACT  [F:1b H:2a]";
+	unsigned char TestRunning[]     EEMEM = "Testing";
+	unsigned char Bat[]             EEMEM = "Battery ";
+	unsigned char BatWeak[]         EEMEM = "weak";
+	unsigned char BatEmpty[]        EEMEM = "empty!";
+	unsigned char TestFailed1[]     EEMEM = "No, unknown, or";
+	unsigned char TestFailed2[]     EEMEM = "damaged ";
+	unsigned char Bauteil[]         EEMEM = "part";
+	unsigned char Unknown[]         EEMEM = " unknown";
+	unsigned char OrBroken[] 		EEMEM = "or damaged ";
+	unsigned char TestTimedOut[] 	EEMEM = "Timeout!";
+	
+	// Components
 	unsigned char Diode[]           EEMEM = "Diode: ";
-	unsigned char DualDiode[]       EEMEM = "Double diode €";
+	unsigned char DualDiode[]       EEMEM = "Double diode ";
 	unsigned char TwoDiodes[]       EEMEM = "2 diodes";
 	unsigned char Antiparallel[]    EEMEM = "anti-parallel";
-	unsigned char InSeries[]        EEMEM = "serial A=€€";
-	unsigned char K1[]              EEMEM = ";C1=";
-	unsigned char K2[]              EEMEM = ";C2=";
-	unsigned char GAK[]             EEMEM = "GAC=";
-	unsigned char NextK[]           EEMEM = ";C=";
-	unsigned char K[]               EEMEM = "C=";
+	unsigned char Resistor[] 		EEMEM = "Resistor: ";
+	unsigned char Capacitor[] 		EEMEM = "Capacitor: ";
+	unsigned char InSeries[]        EEMEM = "serial A=";
 	unsigned char Triac[]           EEMEM = "Triac";
 	unsigned char Thyristor[]       EEMEM = "Thyristor";
-	
 
-
-	unsigned char OrBroken[] 	EEMEM = "or damaged €€";
-	unsigned char Resistor[] 	EEMEM = "Resistor: €€";
-	unsigned char Capacitor[] 	EEMEM = "Capacitor: €€";
-
-									// Sprachunabhängige EEPROM-Strings
+	// Codes and Values
+	unsigned char K1[]          EEMEM = ";C1=";
+	unsigned char K2[]          EEMEM = ";C2=";
+	unsigned char GAK[]         EEMEM = "GAC=";
+	unsigned char NextK[]       EEMEM = ";C=";
+	unsigned char K[]           EEMEM = "C=";
 	unsigned char mosfet[]  	EEMEM = "-MOS";
 	unsigned char emode[]   	EEMEM = "-E";
 	unsigned char dmode[]   	EEMEM = "-D";
 	unsigned char jfet[]    	EEMEM = "-JFET";
 	unsigned char A1[]      	EEMEM = ";A1=";
 	unsigned char A2[]      	EEMEM = ";A2=";
-//	unsigned char NullDot[] 	EEMEM = "0,";			// NOT USED
 	unsigned char GateCap[] 	EEMEM = " C=";
 	unsigned char hfestr[]  	EEMEM = "hFE=";
 	unsigned char NPN[]     	EEMEM = "NPN";
@@ -129,13 +169,9 @@ otherwise there are problems with the LCD announcement with the different langua
 	unsigned char Gate[]    	EEMEM = "G=";
 	unsigned char CA[]      	EEMEM = "CA";
 	unsigned char CC[]     		EEMEM = "CC";
-	unsigned char TestTimedOut[] 	EEMEM = "Timeout!";
-	unsigned char DiodeIcon[] EEMEM = {4,31,31,14,14,4,31,4,0};	// Diode icon
-									// This is address 0 of the EEPROM 
-									// 0x04 0x1F,0x1F,0x0E,0x0E,0x04,0x1F,0x04,0x00 
-									//  ^^ address 0
 
-#define WDT_enabled  							// Watchdog active for normal use, disable for debug
+	// LCD Icons
+	unsigned char DiodeIcon[] EEMEM = {4,31,31,14,14,4,31,4,0};	// Diode icon
 
 struct Diode {
 	uint8_t Anode;
@@ -345,14 +381,20 @@ start:									// re-entry point, if button is re-pressed
 
   lcd_eep_string(TestRunning);						// Message - "Testing ...¤¤¤¤¤¤"
   //Line2();
-  
-									// All 6 combination options for 3 the pins examine
+
+  lcd_data((unsigned char)'.');
   CheckPins(TP1, TP2, TP3);
+  lcd_data((unsigned char)'.');
   CheckPins(TP1, TP3, TP2);
+  lcd_data((unsigned char)'.');
   CheckPins(TP2, TP1, TP3);
+  lcd_data((unsigned char)'.');
   CheckPins(TP2, TP3, TP1);
+  lcd_data((unsigned char)'.');
   CheckPins(TP3, TP2, TP1);
+  lcd_data((unsigned char)'.');
   CheckPins(TP3, TP1, TP2);
+  lcd_data((unsigned char)'.');
   //lcd_clear();
 
 //---------------------------------------------CAPACITOR---------------------------------------
