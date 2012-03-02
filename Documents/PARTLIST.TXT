@@ -1,0 +1,59 @@
+AVR Component Tester [v1.0]
+SVN: http://code.google.com/p/avr-component-tester/
+Project with BrentBXR and MickM
+
+--------------------------------------------------------------------------------------
+======================================================================================
+--------------------------------------------------------------------------------------
+
+Partlist
+Exported from 2-6-2012-b (2).sch at 3/1/2012 9:00:39 PM
+
+Part        Value          Device          Package       Library                 Sheet
+
+9V-DC-IN                   PINHD-1X2       1X02          pinhead                 1
+C1          100n           C-US025-030X050 C025-030X050  rcl                     1
+C2          100nF          C-US025-030X050 C025-030X050  rcl                     1
+C3          100n           C-US025-030X050 C025-030X050  rcl                     1
+C4          100n           C-US025-030X050 C025-030X050  rcl                     1
+C5          100n           C-US025-030X050 C025-030X050  rcl                     1
+C6          100uF          CPOL-USE2-5     E2-5          rcl                     1
+D1          1N5817-B       1N5817-B        DO41-7.6      diode                   1
+D2          5V1            BZX55           DO35Z10       diode                   1
+IC1         MEGA328p       MEGA328-P       DIP28         atmel                   1
+IC2         7805L          78LXX           78LXX         v-reg                   1
+LCDHD44870  TUXGR_16X2_R2  TUXGR_16X2_R2   TUXGR_16X2_R2 display-lcd             1
+LED1        LED            LED3MM          LED3MM        led                     1
+PWR         LED            LED3MM          LED3MM        led                     1
+Q1          BC547 [NPN]    BC547           SOT54A        transistor-small-signal 1
+Q2          BC547 [NPN]    BC547           SOT54A        transistor-small-signal 1
+Q3          BC557 [PNP]    BC557           TO92          transistor-pnp          1
+R1          750R           R-US_0204/7     0204/7        rcl                     1
+R2          500K           R-US_0204/7     0204/7        rcl                     1
+R3          750R           R-US_0204/7     0204/7        rcl                     1
+R4          500K           R-US_0204/7     0204/7        rcl                     1
+R5          750R           R-US_0204/7     0204/7        rcl                     1
+R6          500K           R-US_0204/7     0204/7        rcl                     1
+R7          27k            R-US_0204/7     0204/7        rcl                     1
+R8          27K            R-US_0204/7     0204/7        rcl                     1
+R9          100K           R-US_0204/7     0204/7        rcl                     1
+R10         33K            R-US_0204/7     0204/7        rcl                     1
+R11         10K            TRIM_EU-CA9V    CA9V          pot                     1
+R12         10K            R-US_0204/7     0204/7        rcl                     1
+R13         10K            R-US_0204/7     0204/7        rcl                     1
+R15         150R           R-US_0204/7     0204/7        rcl                     1
+R21         3K3            R-US_0204/7     0204/7        rcl                     1
+R22         680R           R-US_0204/7     0204/7        rcl                     1
+
+Notice:
+For the most part the parts are not part # specific. Transistors just need to be the
+correct type (NPN or PNP); decoupling caps can change; trimpot; and so on...
+
+
+For best results use a military grade 1% resistors for the probes which are:
+   
+       750  Ohm   x3
+       500 kOhm   x3
+
+                                                                     - Brent Reamer
+                                                                       aka BrentBXR
