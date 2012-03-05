@@ -120,7 +120,9 @@
 // Strings [Stored in EEPROM to conserve program space]
 
 	// Words, messages, and strings:        
-	unsigned char StartupMessage[]	EEMEM = "Component Tester";
+	unsigned char StartupMessage[]	EEMEM = "ACT v1.0   ";
+	unsigned char BatMode[] 		EEMEM = "[BAT]";
+	unsigned char PwrMode[]			EEMEM = "[PWR]";
 	unsigned char TestRunning[]     EEMEM = "Testing";
 	unsigned char Bat[]             EEMEM = "Battery ";
 	unsigned char BatWeak[]         EEMEM = "weak";
@@ -381,13 +383,15 @@ start:									// re-entry point, if button is re-pressed
 
   lcd_clear();
   lcd_eep_string(StartupMessage);
-  Line2();
+  
 
   // Check GND&BATMODE_BIT is jumped to ground; if its not then test for battery.
   if(PWRMODE_PIN & (1<<PWRMODE_BIT)) {
   PowerMode = PWR_9V;
+  lcd_eep_string(BatMode);
+  Line2();
 	  if (hfe[0] < BAT_WEAK) {						// 930 was 650 Goes weak at 7.7v Input.
-		lcd_clear();
+		//lcd_clear();
 		lcd_eep_string(Bat);						// Message - "Battery €"
 		if(hfe[0] < BAT_DEAD) {						// 875 was 600, Vcc < 7.2V
 		  lcd_eep_string(BatEmpty);						// Message - "empty!€€" - Battery Dead
@@ -395,14 +399,17 @@ start:									// re-entry point, if button is re-pressed
 		  PORTD = 0;							// switch off
 		  return 0;
 		}
+		lcd_clear();
 		lcd_eep_string(BatWeak);						// Message - "weak€€€", Battery weak
 		Line2();								// Start second line
 	  }
+  } else {
+    lcd_eep_string(PwrMode);
+	Line2();
   }
  
 
   lcd_eep_string(TestRunning);						// Message - "Testing ...¤¤¤¤¤¤"
-  //Line2();
 
   lcd_data((unsigned char)'.');
   CheckPins(TP1, TP2, TP3);
@@ -417,7 +424,6 @@ start:									// re-entry point, if button is re-pressed
   lcd_data((unsigned char)'.');
   CheckPins(TP3, TP1, TP2);
   lcd_data((unsigned char)'.');
-  //lcd_clear();
 
 //---------------------------------------------CAPACITOR---------------------------------------
 									// Separate measurement to the test on condenser
