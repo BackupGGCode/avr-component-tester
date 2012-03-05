@@ -53,6 +53,7 @@
 #include <avr/wdt.h>
 #include <math.h>
 
+
 #define MCU_STATUS_REG MCUCR
 
 // *########################################################################################
@@ -67,12 +68,12 @@
 
 #define WDT_enabled  							// Watchdog active for normal use, disable for debug
 									// MickM defines, set with 9.00V DC input from a bench PS.
-#define SMALL_CAP_VALUE 218						// 218  0xDA    Adjust for accuracy on big Caps with 750R, was 394
-#define LARGE_CAP_VALUE 167						// 167  0xA7    Adjust for accuracy, small Caps with 500K, was 283
-#define BAT_WEAK 930							// 930  0x03A2  7.7V weak battery, was 650
-#define BAT_DEAD 875							// 875  0x036B  7.2V dead Battery, was 600
-#define LARGE_R_VALUE 5000						// 5000 0x1388 for 500K, value is divided by 100, was 4700 for 470K
-#define SMALL_R_VALUE 750						// 750R 0x02EE, was 680R
+#define SMALL_CAP_VALUE 394						// 218  0xDA    Adjust for accuracy on big Caps with 750R, was 394
+#define LARGE_CAP_VALUE 283						// 167  0xA7    Adjust for accuracy, small Caps with 500K, was 283
+#define BAT_WEAK 850							// 930  0x03A2  7.7V weak battery, was 650
+#define BAT_DEAD 650							// 875  0x036B  7.2V dead Battery, was 600
+#define LARGE_R_VALUE 4700						// 
+#define SMALL_R_VALUE 680						// 
 #define ASCII_1 49							// Ascii one.
 #define NORMAL_CAP_TESTS 1						// Just do normal Cap test, compare to CapTestMode in EEPROM, 2 to enable all
 #define HALF_ADC_RANGE 512						// midpoint of ADC
@@ -118,8 +119,8 @@
 
 // Strings [Stored in EEPROM to conserve program space]
 
-	// Words, messages, and strings:
-	unsigned char StartupMessage[]	EEMEM = "ACT  [F:1b H:2a]";
+	// Words, messages, and strings:        
+	unsigned char StartupMessage[]	EEMEM = "Component Tester";
 	unsigned char TestRunning[]     EEMEM = "Testing";
 	unsigned char Bat[]             EEMEM = "Battery ";
 	unsigned char BatWeak[]         EEMEM = "weak";
@@ -252,6 +253,18 @@ void 		ReadCapacity		(uint8_t HighPin, uint8_t LowPin);
 #define PART_MODE_PNP 2
 
 
+// Select power source; If BATMODE_BIT is jumped to ground then power source = 5v; else 9v battery
+#define PWRMODE_DDR DDRB
+#define PWRMODE_PIN PINB
+#define PWRMODE_PORT PORTB
+#define PWRMODE_BIT PB6
+
+#define PWR_5V 0
+#define PWR_9V 1
+
+volatile unsigned int PowerMode=PWR_5V;
+
+
 struct Diode diodes[6];
 
 uint8_t 		NumOfDiodes;
@@ -281,6 +294,7 @@ char 			outval[8];
 unsigned int 		adcv[4];
 unsigned int 		gthvoltage;					// Gate threshold voltage
 char 			outval2[6];
+
 									// In the inverted mode of operation the UART sends reverse logic (High = 0 and Low = 1 )
 									// That corresponds to the logic of the RS232-  Interface of Standard-PCs. 
 #ifdef SWUART_INVERT
@@ -290,9 +304,9 @@ char 			outval2[6];
 #endif
 
 
-#define PIN1_ALIAS 0x42 //ASCII B
-#define PIN2_ALIAS 0x47 //ASCII G
-#define PIN3_ALIAS 0x59 //ASCII Y
+#define PIN1_ALIAS 'Y' //ASCII
+#define PIN2_ALIAS 'B' //ASCII
+#define PIN3_ALIAS 'G' //ASCII
 
 // Send in a pin number ASCII code and get its ASCII alias value
 // to be safe, if its not 1,2,or3 then return what was sent
@@ -315,6 +329,9 @@ uint8_t GetPinAlias(uint8_t nPin)
 int main(void) {
   ON_DDR = (1<<ON_PIN);							// Switch on
   ON_PORT = (1<<ON_PIN) | (1<<RST_PIN);					// Keep power on and set -RESET pin High
+
+  PWRMODE_DDR &= ~(1<<PWRMODE_BIT); // Battery mode jumper; set to input
+  PWRMODE_PORT |= (1<<PWRMODE_BIT); // internal pull-up
   
   uint8_t tmp;
   ADCSRA = (1<<ADEN) | (1<<ADPS1) | (1<<ADPS0);				// Enable ADC, set Prescale to 8
@@ -366,18 +383,23 @@ start:									// re-entry point, if button is re-pressed
   lcd_eep_string(StartupMessage);
   Line2();
 
-  if (hfe[0] < BAT_WEAK) {						// 930 was 650 Goes weak at 7.7v Input.
-	lcd_clear();
-    lcd_eep_string(Bat);						// Message - "Battery €"
-    if(hfe[0] < BAT_DEAD) {						// 875 was 600, Vcc < 7.2V
-      lcd_eep_string(BatEmpty);						// Message - "empty!€€" - Battery Dead
-      _delay_ms(1000);
-      PORTD = 0;							// switch off
-      return 0;
-    }
-    lcd_eep_string(BatWeak);						// Message - "weak€€€", Battery weak
-    Line2();								// Start second line
+  // Check GND&BATMODE_BIT is jumped to ground; if its not then test for battery.
+  if(PWRMODE_PIN & (1<<PWRMODE_BIT)) {
+  PowerMode = PWR_9V;
+	  if (hfe[0] < BAT_WEAK) {						// 930 was 650 Goes weak at 7.7v Input.
+		lcd_clear();
+		lcd_eep_string(Bat);						// Message - "Battery €"
+		if(hfe[0] < BAT_DEAD) {						// 875 was 600, Vcc < 7.2V
+		  lcd_eep_string(BatEmpty);						// Message - "empty!€€" - Battery Dead
+		  _delay_ms(1000);
+		  PORTD = 0;							// switch off
+		  return 0;
+		}
+		lcd_eep_string(BatWeak);						// Message - "weak€€€", Battery weak
+		Line2();								// Start second line
+	  }
   }
+ 
 
   lcd_eep_string(TestRunning);						// Message - "Testing ...¤¤¤¤¤¤"
   //Line2();

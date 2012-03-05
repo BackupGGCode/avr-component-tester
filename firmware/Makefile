@@ -4,13 +4,14 @@
 
 ## General Flags
 PROJECT = TransistorTestNew
+# available languages are: LANG_ENGLISH, LANG_GERMAN, LANG_POLISH, LANG_CZECH, LANG_SLOWAK
 UI_LANGUAGE = LANG_ENGLISH
 MCU = atmega328p
 TARGET = TransistorTestNew.elf
 CC = avr-gcc
 
 # programmer type
-PROGRAMMER=usbtiny
+PROGRAMMER=tinyusb
 PORT=usb
 
 CPP = avr-g++
@@ -20,16 +21,13 @@ COMMON = -mmcu=$(MCU)
 
 ## Compile options common for all C compilation units.
 CFLAGS = $(COMMON)
-## CFLAGS += -Wall -gdwarf-2 -std=gnu99 -DF_CPU=1000000UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
-## CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d 
 CFLAGS += -Wall -gdwarf-2 -std=gnu99 -DF_CPU=1000000UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
-CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d  
+CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d
 
 ## Assembly specific flags
 ASMFLAGS = $(COMMON)
 ASMFLAGS += $(CFLAGS)
-ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2 			// org
-##ASMFLAGS += -x assembler-with-cpp -Wa,-gstabs
+ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 
 ## Linker flags
 LDFLAGS = $(COMMON)
@@ -51,11 +49,7 @@ OBJECTS = main.o lcd-routines.o swuart.o
 LINKONLYOBJECTS = 
 
 ## Build
-#ORG# all: $(TARGET) TransistorTestNew.hex TransistorTestNew.eep TransistorTestNew.lss size  
-
-##all: $(TARGET) TransistorTestNew.hex TransistorTestNew.eep TransistorTestNew.lss //mick, had to remove size, avrdude went nuts
-##all: $(TARGET) TransistorTestNew.hex TransistorTestNew.eep
-all: $(TARGET) TransistorTestNew.hex TransistorTestNew.eep TransistorTestNew.lss
+all: $(TARGET) TransistorTestNew.hex TransistorTestNew.eep TransistorTestNew.lss size
 
 ## Compile
 main.o: ./main.c
@@ -93,13 +87,4 @@ clean:
 ## Other dependencies
 -include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)
 
-# device programming ATMega328
-
-upload:
-	avrdude -c usbtiny -B 10.0 -p m328p  -F -U flash:w:./TransistorTestNew.hex:a -U eeprom:w:./TransistorTestNew.eep:a
-fuses:
-	avrdude -c usbtiny -B 10.0 -p m328p  -F -U lfuse:w:0x62:m -U hfuse:w:0xd1:m
-
-##for Mega8:
-##avrdude -c usbtiny -B 10.0 -p m8 -F -U flash:w:./TransistorTestNew.hex:a -U eeprom:w:./TransistorTestNew.eep:a
-##avrdude -c usbtiny -B 10.0 -p m8  -F -U lfuse:w:0x01:m -U hfuse:w:0xd9:m
+# device programming
