@@ -77,7 +77,7 @@
 	unsigned char StartupMessage[]	EEMEM = "ACT v1.0   ";
 	unsigned char BatMode[] 		EEMEM = "[BAT]";
 	unsigned char PwrMode[]			EEMEM = "[PWR]";
-	unsigned char TestRunning[]     EEMEM = "Testing";
+	unsigned char TestRunning[]     EEMEM = "Testing...";
 	unsigned char Bat[]             EEMEM = "Battery ";
 	unsigned char BatWeak[]         EEMEM = "weak";
 	unsigned char BatEmpty[]        EEMEM = "empty!";
@@ -261,37 +261,43 @@ start:									// re-entry point, if button is re-pressed
 	if (hfe[0] < BAT_WEAK) {						// 930 was 650 Goes weak at 7.7v Input.
 		//lcd_clear();
 		lcd_eep_string(Bat);						// Message - "Battery €"
-		if(hfe[0] < BAT_DEAD) {						// 875 was 600, Vcc < 7.2V
-			lcd_eep_string(BatEmpty);						// Message - "empty!€€" - Battery Dead
+		if(hfe[0] < BAT_DEAD) {					// 875 was 600, Vcc < 7.2V
+			lcd_eep_string(BatEmpty);				// Message - "empty!€€" - Battery Dead
 			_delay_ms(1000);
-			PORTD = 0;							// switch off
+			PORTD = 0;								// switch off
 			return 0;
 		}
 		lcd_clear();
-		lcd_eep_string(BatWeak);						// Message - "weak€€€", Battery weak
-		Line2();								// Start second line
+		lcd_eep_string(BatWeak);					// Message - "weak€€€", Battery weak
+		Line2();									// Start second line
 	  }
   } else {
     lcd_eep_string(PwrMode);
 	Line2();
   }
  
-
   lcd_eep_string(TestRunning);						// Message - "Testing"
-
-  lcd_data((unsigned char)'.');						// Test and Progress
+  UpdateProgress("00%");
+  //lcd_data((unsigned char)'.');						// Test and Progress
   CheckPins(TP1, TP2, TP3);
-  lcd_data((unsigned char)'.');
+  UpdateProgress("16%");
+  //lcd_data((unsigned char)'.');
   CheckPins(TP1, TP3, TP2);
-  lcd_data((unsigned char)'.');
+  UpdateProgress("33%");
+  //lcd_data((unsigned char)'.');
   CheckPins(TP2, TP1, TP3);
-  lcd_data((unsigned char)'.');
+  UpdateProgress("50%");
+  //lcd_data((unsigned char)'.');
   CheckPins(TP2, TP3, TP1);
-  lcd_data((unsigned char)'.');
+  UpdateProgress("66%");
+  //lcd_data((unsigned char)'.');
   CheckPins(TP3, TP2, TP1);
-  lcd_data((unsigned char)'.');
+  UpdateProgress("83%");
+  //lcd_data((unsigned char)'.');
   CheckPins(TP3, TP1, TP2);
-  lcd_data((unsigned char)'.');
+  UpdateProgress("99%");
+  //lcd_data((unsigned char)'.');
+  
 
 //---------------------------------------------CAPACITOR---------------------------------------
 									// Separate measurement to the test on condenser

@@ -27,6 +27,8 @@ void uart_newline(void);
 
 #define SetCursor(y, x) lcd_command((uint8_t)(CMD_SetDDRAMAddress + (0x40*(y-1)) + x)) //To a certain position jump
 
+#define UpdateProgress(x) SetCursor(2,13); lcd_string(x)
+
 #define LCDLoadCustomChar() lcd_command(CMD_SetCGRAMAddress)			//Custom chars
 #define LCD_CHAR_OMEGA  244							//Omega character
 #define LCD_CHAR_U  228								//?-indication

@@ -1,10 +1,11 @@
 ###############################################################################
-# Makefile for the project TransistorTestNew
+# AVR Component Tester
+#
+# Makefile for Atmega328p
 ###############################################################################
 
 ## General Flags
 PROJECT = TransistorTestNew
-# available languages are: LANG_ENGLISH, LANG_GERMAN, LANG_POLISH, LANG_CZECH, LANG_SLOWAK
 UI_LANGUAGE = LANG_ENGLISH
 MCU = atmega328p
 TARGET = TransistorTestNew.elf
@@ -14,6 +15,8 @@ CC = avr-gcc
 # programmer type
 PROGRAMMER=usbasp
 PORT=usb
+LFUSE=0x62
+HFUSE=0xD1
 
 AVRDUDE = avrdude
 
@@ -24,7 +27,7 @@ AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -P $(AVRDUDE_PORT) -B 5
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET_BASE).hex:a
 AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET_BASE).eep:a
-AVRDUDE_WRITE_FUSES = -U lfuse:w:0x62:m -U hfuse:w:0xd1:m
+AVRDUDE_WRITE_FUSES = -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m
 
 CPP = avr-g++
 

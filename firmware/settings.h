@@ -121,9 +121,6 @@
 
 
 
-
-
-
 	// Simple Bit Control Defines
 	#define SETBIT(ADDRESS,BIT) (ADDRESS |= (1<<BIT)) 
 	#define CLEARBIT(ADDRESS,BIT) (ADDRESS &= ~(1<<BIT)) 
