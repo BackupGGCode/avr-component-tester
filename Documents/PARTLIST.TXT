@@ -28,12 +28,12 @@ PWR         LED            LED3MM          LED3MM        led                    
 Q1          BC547 [NPN]    BC547           SOT54A        transistor-small-signal 1
 Q2          BC547 [NPN]    BC547           SOT54A        transistor-small-signal 1
 Q3          BC557 [PNP]    BC557           TO92          transistor-pnp          1
-R1          750R           R-US_0204/7     0204/7        rcl                     1
-R2          500K           R-US_0204/7     0204/7        rcl                     1
-R3          750R           R-US_0204/7     0204/7        rcl                     1
-R4          500K           R-US_0204/7     0204/7        rcl                     1
-R5          750R           R-US_0204/7     0204/7        rcl                     1
-R6          500K           R-US_0204/7     0204/7        rcl                     1
+R1          680           R-US_0204/7     0204/7        rcl                     1
+R2          470K           R-US_0204/7     0204/7        rcl                     1
+R3          680R           R-US_0204/7     0204/7        rcl                     1
+R4          470K           R-US_0204/7     0204/7        rcl                     1
+R5          680R           R-US_0204/7     0204/7        rcl                     1
+R6          470K           R-US_0204/7     0204/7        rcl                     1
 R7          27k            R-US_0204/7     0204/7        rcl                     1
 R8          27K            R-US_0204/7     0204/7        rcl                     1
 R9          100K           R-US_0204/7     0204/7        rcl                     1
