@@ -8,11 +8,23 @@ PROJECT = TransistorTestNew
 UI_LANGUAGE = LANG_ENGLISH
 MCU = atmega328p
 TARGET = TransistorTestNew.elf
+TARGET_BASE = TransistorTestNew
 CC = avr-gcc
 
 # programmer type
-PROGRAMMER=tinyusb
+PROGRAMMER=usbasp
 PORT=usb
+
+AVRDUDE = avrdude
+
+AVRDUDE_PROGRAMMER = $(PROGRAMMER) 
+AVRDUDE_PORT = $(PORT)
+
+AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -P $(AVRDUDE_PORT) -B 5 
+
+AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET_BASE).hex:a
+AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET_BASE).eep:a
+AVRDUDE_WRITE_FUSES = -U lfuse:w:0x62:m -U hfuse:w:0xd1:m
 
 CPP = avr-g++
 
@@ -77,6 +89,15 @@ $(TARGET): $(OBJECTS)
 size: ${TARGET}
 	@echo
 	@avr-size -C --mcu=${MCU} ${TARGET}
+
+## Program
+# Program the device source only.  
+program:
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
+
+## Fuses (WARNING FOR ATMEGA328P If you are using a differnt AVR; look up the fuses yourself (0 startup time 1Mhz most important)
+fuses:
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSES)
 
 ## Clean target
 .PHONY: clean

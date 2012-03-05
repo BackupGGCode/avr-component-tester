@@ -53,52 +53,8 @@
 #include <avr/wdt.h>
 #include <math.h>
 
+#include "settings.h"
 
-#define MCU_STATUS_REG MCUCR
-
-// *########################################################################################
-
-// Defined Settings 
-#define ADC_PORT PORTC							// Use port C for A to D inputs
-#define ADC_DDR DDRC
-#define ADC_PIN PINC
-#define TP1 PC0								// AVR pin 23 probe.
-#define TP2 PC1								// AVR pin 24 probe.
-#define TP3 PC2								// AVR pin 25 probe.
-
-#define WDT_enabled  							// Watchdog active for normal use, disable for debug
-									// MickM defines, set with 9.00V DC input from a bench PS.
-#define SMALL_CAP_VALUE 394						// 218  0xDA    Adjust for accuracy on big Caps with 750R, was 394
-#define LARGE_CAP_VALUE 283						// 167  0xA7    Adjust for accuracy, small Caps with 500K, was 283
-#define BAT_WEAK 850							// 930  0x03A2  7.7V weak battery, was 650
-#define BAT_DEAD 650							// 875  0x036B  7.2V dead Battery, was 600
-#define LARGE_R_VALUE 4700						// 
-#define SMALL_R_VALUE 680						// 
-#define ASCII_1 49							// Ascii one.
-#define NORMAL_CAP_TESTS 1						// Just do normal Cap test, compare to CapTestMode in EEPROM, 2 to enable all
-#define HALF_ADC_RANGE 512						// midpoint of ADC
-#define MAX_ADC 1023							// Maximum ADC count
-
-                                                                        // The Capacitor tests take a long time.
-                                                                        // Each test takes 50mS , and there are 6 possible tests.
-                                                                        // The delay is approx. 300 to 500mS
-                                                                        // 
-                                                                        // CapTestMode
-                                                                        // 
-                                                                        // This lets you change the tests that get performed, at compile time only.
-                                                                        // 7 - x (msb)
-                                                                        // 6 - x
-                                                                        // 5 - test mode
-                                                                        // 4 - test mode
-                                                                        // 
-                                                                        // 0 0 -Disable.
-                                                                        // 0 1 - Measure between these 2 pins: (5 4 = 01) pins 3210.
-                                                                        // 1 0 - Do all 6 tests (default)
-                                                                        // 1 1 - ?
-                                                                        // 
-                                                                        // 3 - 2 - first pin to measure.
-                                                                        // 1 - 0 - second pin to measure
-                                                                        // 
 
 	uint8_t CapTestMode EEMEM = 0b00100010;				// 34 0x22, last used EEPROM address 0x15A, Cap test type, pins to use
 														// DEFAULT  0x22 = All 6 Cap Tests, 1st 0, 2nd 2
@@ -116,8 +72,6 @@
 
 
 // *########################################################################################
-
-// Strings [Stored in EEPROM to conserve program space]
 
 	// Words, messages, and strings:        
 	unsigned char StartupMessage[]	EEMEM = "ACT v1.0   ";
@@ -183,135 +137,47 @@ struct Diode {
 };
 									// Function prototypes
 
-void 		CheckPins		(uint8_t HighPin, uint8_t LowPin, uint8_t TristatePin);
-void 		DischargePin		(uint8_t PinToDischarge, uint8_t DischargeDirection);
-unsigned int 	ReadADC			(uint8_t mux);
-void 		lcd_show_format_cap	(char outval[], uint8_t strlength, uint8_t CommaPos);
-void 		ReadCapacity		(uint8_t HighPin, uint8_t LowPin);		
+void 			CheckPins			(uint8_t HighPin, uint8_t LowPin, uint8_t TristatePin);
+void 			DischargePin		(uint8_t PinToDischarge, uint8_t DischargeDirection);
+unsigned int 	ReadADC				(uint8_t mux);
+void 			lcd_show_format_cap	(char outval[], uint8_t strlength, uint8_t CommaPos);
+void 			ReadCapacity		(uint8_t HighPin, uint8_t LowPin);		
 
-#define R_DDR DDRB							// Port B for outputs to test resistors.
-#define R_PORT PORTB
-
-									// Physical and logical hookup:
-									// 
-									// Original usd Mega8, mine is Mega328P, same pinout in dip28
-									// 
-									// Output ----->Rlow----->
-									//                          join here , probe ----> Input
-									// Output ----->RHigh----->
-									// 
-									// two outputs, two R's, one probe, one input
-									// repeat for 3 probes
-									// 
-									// 14-PB0	Rx-750R	    23-PC0 -> Probe		RL1
-									// 15-PB1      	Rx 500K     23-PC0			RH1
-									// 
-									// 16-PB2	Rx-750R	    24-PC1 -> Probe		RL2
-									// 17-PB3	Rx 500K     24-PC1			RH2
-									// 
-									// 18-PB4	Rx-750R	    25-PC2 -> Probe		RL3
-									// 19-PB5	Rx 500K     25-PC2			RH3
-									// 
-									// 26-PC3-x
-									// 27-PC4-x
-									// 
-									// Voltage divider for the battery monitor.
-									// Pin 28, PC5(ADC5) monitors it.
-									// 
-									// Vin (v) --->  diode ----> 10K ---28-PC5(ADC5) and ---3K3 ---> GND
-									// ----> Vreg ---. +5V
-									// There is a 5V1 Zener across the 3K3 to ground, this is for ADC input protection.
-									// The Battery/PS input is not regulated at all, so could be high or spiky.
-									// 
-									// It will never set 5V1 as the input is too small.
-									// 
-									
-
-#define ON_DDR DDRD
-#define ON_PORT PORTD
-#define ON_PIN_REG PIND
-#define ON_PIN PD6							// Must be set high immediately, to stay powered on
-#define RST_PIN PD7							// "push to test" button
-
-#define PART_NONE 0							// Types of Devices
-#define PART_DIODE 1
-#define PART_TRANSISTOR 2
-#define PART_FET 3
-#define PART_TRIAC 4
-#define PART_THYRISTOR 5
-#define PART_RESISTOR 6
-#define PART_CAPACITOR 7
-
-									// Special definitions for Devices
-#define PART_MODE_N_E_MOS 1						// FETs
-#define PART_MODE_P_E_MOS 2
-#define PART_MODE_N_D_MOS 3
-#define PART_MODE_P_D_MOS 4
-#define PART_MODE_N_JFET 5
-#define PART_MODE_P_JFET 6
-
-
-#define PART_MODE_NPN 1							// Bipolar
-#define PART_MODE_PNP 2
-
-
-// Select power source; If BATMODE_BIT is jumped to ground then power source = 5v; else 9v battery
-#define PWRMODE_DDR DDRB
-#define PWRMODE_PIN PINB
-#define PWRMODE_PORT PORTB
-#define PWRMODE_BIT PB6
-
-#define PWR_5V 0
-#define PWR_9V 1
 
 volatile unsigned int PowerMode=PWR_5V;
 
 
-struct Diode diodes[6];
+struct 			Diode diodes[6];
 
 uint8_t 		NumOfDiodes;
 uint8_t 		b;						// pins of transistor
 uint8_t 		c;						// pins of transistor
 uint8_t 		e;						// pins of transistor
-unsigned long 		lhfe;						// Amplification factor
-uint8_t 		PartReady;					// Device recognized, Transistor, FET, Triac
-unsigned int 		hfe[2];						// Amplification factors
-unsigned int 		uBE[2];						// B-E Covering for transistors
-uint8_t 		PartMode;					// See defines PART_MODE_
+unsigned long 	lhfe;					// Amplification factor
+uint8_t 		PartReady;				// Device recognized, Transistor, FET, Triac
+unsigned int 	hfe[2];					// Amplification factors
+unsigned int 	uBE[2];					// B-E Covering for transistors
+uint8_t 		PartMode;				// See defines PART_MODE_
 uint8_t 		tmpval;
 uint8_t 		tmpval2;
 uint8_t 		ra;						// Resistance pin
 uint8_t 		rb;						// Resistance pin
-unsigned int 		rv[2];						// Voltage drop at the resistance
-unsigned int 		radcmax[2];	       				// Max ADC value (smaller than 1023, comes close but does not get to zero)
+unsigned int 	rv[2];					// Voltage drop at the resistance
+unsigned int 	radcmax[2];	       		// Max ADC value (smaller than 1023, comes close but does not get to zero)
 uint8_t 		ca;						// Condenser-Pins
 uint8_t 		cb;						// Condenser-Pins
-uint8_t 		cp1;						// Testing condenser pins, if measurement for individual pins selected
-uint8_t 		cp2;						// Testing condenser pins, if measurement for individual pins sel
-uint8_t 		ctmode;						// Condenser test mode
-unsigned long 		cv;
-uint8_t 		tmpPartFound;					// temp found Device, used for Resistor
-uint8_t 		PartFound;					// the found Device numeric ID see defines PART_
+uint8_t 		cp1;					// Testing condenser pins, if measurement for individual pins selected
+uint8_t 		cp2;					// Testing condenser pins, if measurement for individual pins sel
+uint8_t 		ctmode;					// Condenser test mode
+unsigned long 	cv;
+uint8_t 		tmpPartFound;			// temp found Device, used for Resistor
+uint8_t 		PartFound;				// the found Device numeric ID see defines PART_
 char 			outval[8];
-unsigned int 		adcv[4];
-unsigned int 		gthvoltage;					// Gate threshold voltage
+unsigned int 	adcv[4];
+unsigned int 	gthvoltage;				// Gate threshold voltage
 char 			outval2[6];
 
-									// In the inverted mode of operation the UART sends reverse logic (High = 0 and Low = 1 )
-									// That corresponds to the logic of the RS232-  Interface of Standard-PCs. 
-#ifdef SWUART_INVERT
-	#define TXD_VAL 0						// DEFAULT - change in swuart.h
-#else
-	#define TXD_VAL (1<<TxD)
-#endif
 
-
-#define PIN1_ALIAS 'Y' //ASCII
-#define PIN2_ALIAS 'B' //ASCII
-#define PIN3_ALIAS 'G' //ASCII
-
-// Send in a pin number ASCII code and get its ASCII alias value
-// to be safe, if its not 1,2,or3 then return what was sent
 uint8_t GetPinAlias(uint8_t nPin)
 {
    switch(nPin) {
@@ -327,6 +193,8 @@ uint8_t GetPinAlias(uint8_t nPin)
    }
    return nPin;
 }
+
+
 
 int main(void) {
   ON_DDR = (1<<ON_PIN);							// Switch on
@@ -370,16 +238,16 @@ start:									// re-entry point, if button is re-pressed
   tmpPartFound 	= PART_NONE;
   NumOfDiodes 	= 0;
   PartReady 	= 0;
-  PartMode 	= 0;
-  ca 		= 0;
-  cb 		= 0;
+  PartMode 		= 0;
+  ca 			= 0;
+  cb 			= 0;
 
   lcd_clear();
   ADC_DDR = (1<<TxD);							// Enable the Software-UART
   uart_newline();
-                                                                        // Measure the 9V battery Supply ( - diode drop)
+                                                // Measure the 9V battery Supply ( - diode drop)
   ReadADC(5 | (1<<REFS1));						// Dummy-Readout
-  hfe[0] = ReadADC(5 | (1<<REFS1));					// OR with internal reference
+  hfe[0] = ReadADC(5 | (1<<REFS1));			// OR with internal reference
 
   lcd_clear();
   lcd_eep_string(StartupMessage);
@@ -387,17 +255,17 @@ start:									// re-entry point, if button is re-pressed
 
   // Check GND&BATMODE_BIT is jumped to ground; if its not then test for battery.
   if(PWRMODE_PIN & (1<<PWRMODE_BIT)) {
-  PowerMode = PWR_9V;
-  lcd_eep_string(BatMode);
-  Line2();
-	  if (hfe[0] < BAT_WEAK) {						// 930 was 650 Goes weak at 7.7v Input.
+	PowerMode = PWR_9V;
+	lcd_eep_string(BatMode);
+	Line2();
+	if (hfe[0] < BAT_WEAK) {						// 930 was 650 Goes weak at 7.7v Input.
 		//lcd_clear();
 		lcd_eep_string(Bat);						// Message - "Battery €"
 		if(hfe[0] < BAT_DEAD) {						// 875 was 600, Vcc < 7.2V
-		  lcd_eep_string(BatEmpty);						// Message - "empty!€€" - Battery Dead
-		  _delay_ms(1000);
-		  PORTD = 0;							// switch off
-		  return 0;
+			lcd_eep_string(BatEmpty);						// Message - "empty!€€" - Battery Dead
+			_delay_ms(1000);
+			PORTD = 0;							// switch off
+			return 0;
 		}
 		lcd_clear();
 		lcd_eep_string(BatWeak);						// Message - "weak€€€", Battery weak
@@ -409,9 +277,9 @@ start:									// re-entry point, if button is re-pressed
   }
  
 
-  lcd_eep_string(TestRunning);						// Message - "Testing ...¤¤¤¤¤¤"
+  lcd_eep_string(TestRunning);						// Message - "Testing"
 
-  lcd_data((unsigned char)'.');
+  lcd_data((unsigned char)'.');						// Test and Progress
   CheckPins(TP1, TP2, TP3);
   lcd_data((unsigned char)'.');
   CheckPins(TP1, TP3, TP2);
