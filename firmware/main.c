@@ -177,8 +177,8 @@ unsigned int 	gthvoltage;				// Gate threshold voltage
 char 			outval2[6];
 
 
-uint8_t GetPinAlias(uint8_t nPin)
-{
+uint8_t GetPinAlias(uint8_t nPin)				// GetPinAlias allows the user to define his own
+{												// alias for each pin #; defined in 'settings.h'
    switch(nPin) {
       case (unsigned char)'1':
          nPin = PIN1_ALIAS;
@@ -194,106 +194,116 @@ uint8_t GetPinAlias(uint8_t nPin)
 }
 
 
-
 int main(void) {
-  ON_DDR = (1<<ON_PIN);							// Switch on
-  ON_PORT = (1<<ON_PIN) | (1<<RST_PIN);					// Keep power on and set -RESET pin High
 
-  PWRMODE_DDR &= ~(1<<PWRMODE_BIT); // Battery mode jumper; set to input
-  PWRMODE_PORT |= (1<<PWRMODE_BIT); // internal pull-up
+  POWER_ON();											// Turn the regulator ON
+  PWRMODE_SETUP();										// Setup PWRMODE jumper input
+  lcd_init();											// init LCD
   
   uint8_t tmp;
-  ADCSRA = (1<<ADEN) | (1<<ADPS1) | (1<<ADPS0);				// Enable ADC, set Prescale to 8
-  lcd_init();								// init LCD
-									// Load EEPROM constants
-  unsigned int rhval = eeprom_read_word(&R_H_VAL);			// R_H
-  unsigned int rlval = eeprom_read_word(&R_L_VAL);			// R_L
+  ADCSRA = (1<<ADEN) | (1<<ADPS1) | (1<<ADPS0);		// Enable ADC, set Prescale to 8
+  
+  unsigned int rhval = eeprom_read_word(&R_H_VAL);		// R_H
+  unsigned int rlval = eeprom_read_word(&R_L_VAL);		// R_L
   
   ctmode = eeprom_read_byte(&CapTestMode);				// Compile time choice of test modes (0x22)
-  cp1 = (ctmode & 12) >> 2;						// Capacitor pin 1, DEFAULT 0
-  cp2 = ctmode & 3;							// Capacitor pin 2, DEFAULT 2
-  ctmode = (ctmode & 48) >> 4;						// Capacitor test mode, DEFAULT is 0x02 for all 6 cap tests.
+  cp1 = (ctmode & 12) >> 2;							// Capacitor pin 1, DEFAULT 0
+  cp2 = ctmode & 3;										// Capacitor pin 2, DEFAULT 2
+  ctmode = (ctmode & 48) >> 4;							// Capacitor test mode, DEFAULT is 0x02 for all 6 cap tests.
   
-  wdt_disable();							// Disable watch dog timer.
+  wdt_disable();										// Disable watch dog timer.
   
-  if(MCU_STATUS_REG & (1<<WDRF)) {					// Examine for Watchdog RESETs That enters, if the Watchdog 2s were not put back Can occur, 
-                                                                        // if the program in a continuous loop " itself; tangled" has.
-    lcd_eep_string(TestTimedOut);					// Message - "Timeout!"
-    _delay_ms(3000);                                                    // Wait 3 sec
-    ON_PORT = 0;							// Switch off! 
-    return 0;
+  if(MCU_STATUS_REG & (1<<WDRF)) {						// Examine for Watchdog RESETs That enters, if the Watchdog 2s were not put back Can occur, 
+                                                        // if the program in a continuous loop " itself; tangled" has.
+    lcd_eep_string(TestTimedOut);						// Message - "Timeout!"
+    _delay_ms(3000);                                	// Wait 3 sec
+	wdt_enable(WDTO_2S);								// Wait two seconds; if on power it will reset; on battery it will turn itself off
+    while(1) {
+		POWER_OFF();									// Power down in BAT mode or RESET in PWR mode
+	}
   }
   
-  LCDLoadCustomChar();							// Custom indication Diode symbol into LCD load
-  lcd_eep_string(DiodeIcon);						// Message - diode icon
-  Line1();								// jump to start of first line
+  LCDLoadCustomChar();									// Custom indication Diode symbol into LCD load
+  lcd_eep_string(DiodeIcon);							// Message - diode icon
+  Line1();												// jump to start of first line
 
-start:									// re-entry point, if button is re-pressed
+start:													// re-entry point, if button is re-pressed
   #ifdef WDT_enabled
-    wdt_enable(WDTO_2S);						// Watchdog Timer on, 2 seconds?
+    wdt_enable(WDTO_2S);								// Watchdog Timer on, 2 seconds?
   #endif
 
-  PartFound 	= PART_NONE;
-  tmpPartFound 	= PART_NONE;
-  NumOfDiodes 	= 0;
-  PartReady 	= 0;
-  PartMode 		= 0;
-  ca 			= 0;
-  cb 			= 0;
+  PartFound 	= PART_NONE;							// Default all results
+  tmpPartFound 	= PART_NONE;							//		  "    " 
+  NumOfDiodes 	= 0;									//			||
+  PartReady 	= 0;									//			||
+  PartMode 		= 0;									//			||
+  ca 			= 0;									//			||
+  cb 			= 0;									//			\/
 
-  lcd_clear();
-                                                // Measure the 9V battery Supply ( - diode drop)
-  ReadADC(5 | (1<<REFS1));						// Dummy-Readout
-  hfe[0] = ReadADC(5 | (1<<REFS1));			// OR with internal reference
+											//	->	// Startup Message ////////////////////////////////////////
+  lcd_clear();										// 
+  lcd_eep_string(StartupMessage);					// LCD: ACT v#.#    [XXX]
 
-  lcd_clear();
-  lcd_eep_string(StartupMessage);
+
   
+											//	->	// Power selection and Battery Testing ////////////////////
 
-  // Check GND&BATMODE_BIT is jumped to ground; if its not then test for battery.
-  if(PWRMODE_PIN & (1<<PWRMODE_BIT)) {
-	PowerMode = PWR_9V;
-	lcd_eep_string(BatMode);
+  if(PWRMODE_GET()) {								// Get the PWRMODE jumper logic
+	PowerMode = PWR_9V;								// Set powermode to PWR_9V
+	_delay_us(250);
+	
+	ReadADC(5 | (1<<REFS1));						// Measure the 9V battery Supply ( - diode drop)
+	hfe[0] = ReadADC(5 | (1<<REFS1));				// if in battery mode.
+	
+	lcd_eep_string(BatMode);						// Tell user device in BAT mode
 	Line2();
-	if (hfe[0] < BAT_WEAK) {						// 930 was 650 Goes weak at 7.7v Input.
-		//lcd_clear();
-		lcd_eep_string(Bat);						// Message - "Battery €"
-		if(hfe[0] < BAT_DEAD) {					// 875 was 600, Vcc < 7.2V
-			lcd_eep_string(BatEmpty);				// Message - "empty!€€" - Battery Dead
-			_delay_ms(1000);
-			PORTD = 0;								// switch off
-			return 0;
+	
+	if (hfe[0] < BAT_WEAK) {						// Compare 9v reading with BAT_WEAK variable
+		
+		if(hfe[0] < BAT_DEAD) {					// If the batter is considered dead then
+			lcd_eep_string(Bat);					
+			lcd_eep_string(BatEmpty);				// Tell the user battery is DEAD
+			_delay_ms(3000);						// Wait a bit.
+			while(1) {								// Forever loop
+				POWER_OFF();						// keep trying to kill the power forever.
+			}
 		}
-		lcd_clear();
-		lcd_eep_string(BatWeak);					// Message - "weak€€€", Battery weak
+		
+		lcd_clear();			
+		lcd_eep_string(Bat);						// Battery isnt dead; its just weak
+		lcd_eep_string(BatWeak);					// tell the user; but keep testing...
 		Line2();									// Start second line
 	  }
   } else {
-    lcd_eep_string(PwrMode);
+	PowerMode = PWR_5V;								// Power mode is constent v5, skip battery check.
+    lcd_eep_string(PwrMode);						// Tell user we are running in PWR mode.
 	Line2();
   }
  
-  lcd_eep_string(TestRunning);						// Message - "Testing"
-  UpdateProgress("00%");
-  //lcd_data((unsigned char)'.');						// Test and Progress
-  CheckPins(TP1, TP2, TP3);
-  UpdateProgress("16%");
-  //lcd_data((unsigned char)'.');
-  CheckPins(TP1, TP3, TP2);
-  UpdateProgress("33%");
-  //lcd_data((unsigned char)'.');
-  CheckPins(TP2, TP1, TP3);
-  UpdateProgress("50%");
-  //lcd_data((unsigned char)'.');
-  CheckPins(TP2, TP3, TP1);
-  UpdateProgress("66%");
-  //lcd_data((unsigned char)'.');
-  CheckPins(TP3, TP2, TP1);
-  UpdateProgress("83%");
-  //lcd_data((unsigned char)'.');
-  CheckPins(TP3, TP1, TP2);
-  UpdateProgress("99%");
-  //lcd_data((unsigned char)'.');
+											//	->	// Begin testing sequince. ///////////////////////////////
+	
+  lcd_eep_string(TestRunning);						// Tell user the testing has begun...
+  
+  UpdateProgress("00%");							// Progress at 00% and Testing
+  
+  CheckPins(TP1, TP2, TP3);							//			||
+  UpdateProgress("16%");							//			\/
+  
+  CheckPins(TP1, TP3, TP2);							//		TESTING...
+  UpdateProgress("33%");							//
+
+  CheckPins(TP2, TP1, TP3);							//			||
+  UpdateProgress("50%");							//			\/
+  
+  CheckPins(TP2, TP3, TP1);							//		TESTING...
+  UpdateProgress("66%");							//
+  
+  CheckPins(TP3, TP2, TP1);							//			||
+  UpdateProgress("83%");							//			\/
+  
+  CheckPins(TP3, TP1, TP2);							//	   Almost there!
+  UpdateProgress("99%");							// Testing Completed or 99%
+  
   
 
 //---------------------------------------------CAPACITOR---------------------------------------
