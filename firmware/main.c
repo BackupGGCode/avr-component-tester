@@ -1,9 +1,9 @@
 /*
 
-    ///////////////////////////////////////////////////
-   ///////////////// AVR Component Tester ////////////
-  //////////////////    Version 1 beta    ///////////
- ///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////
+   ///////////////// AVR Component Tester ////////////////
+  //////////////////    Version 1 beta    ///////////////
+ ///////////////////////////////////////////////////////
 
  AVR Component Tester
  Version 1.0 BETA
@@ -44,7 +44,6 @@
 
 #include <avr/io.h>
 #include "lcd-routines.h"
-#include "swuart.h"
 #include <util/delay.h>
 #include <avr/sleep.h>
 #include <stdlib.h>
@@ -243,8 +242,6 @@ start:									// re-entry point, if button is re-pressed
   cb 			= 0;
 
   lcd_clear();
-  ADC_DDR = (1<<TxD);							// Enable the Software-UART
-  uart_newline();
                                                 // Measure the 9V battery Supply ( - diode drop)
   ReadADC(5 | (1<<REFS1));						// Dummy-Readout
   hfe[0] = ReadADC(5 | (1<<REFS1));			// OR with internal reference
@@ -672,8 +669,8 @@ uint8_t tmpval, tmpval2;
   tmpval = (LowPin * 2);						// necessarily because of the arrangement of the resistances
   R_DDR = (1<<tmpval);							// Low pin on exit and over R_L to ground
   R_PORT = 0;
-  ADC_DDR = (1<<HighPin) | (1<<TxD);					// High pin on exit
-  ADC_PORT = (1<<HighPin) | TXD_VAL;					// High pin to Vcc
+  ADC_DDR = (1<<HighPin);					// High pin on exit
+  ADC_PORT = (1<<HighPin);					// High pin to Vcc
   _delay_ms(5);
 									// With some MOSFETs the gate (TriState act pin) must be unloaded first
 									// N-channel:
@@ -698,8 +695,8 @@ uint8_t tmpval, tmpval2;
     adcv[2] = ReadADC(LowPin);						// Voltage at the assumed SOURCE measure again
 									// If it concerns a leading MOSFET or JFET, would have adcv [1] > adcv [0] its
     if(adcv[2]>(adcv[1]+100)) {						// Voltage at the gate measure, to the distinction between MOSFET and JFET
-      ADC_PORT = TXD_VAL;
-      ADC_DDR = (1<<LowPin) | (1<<TxD);					// Low pin to ground
+      ADC_PORT = 0x00;
+      ADC_DDR = (1<<LowPin);					// Low pin to ground
       tmpval = (HighPin * 2);						// necessarily because of the arrangement of the resistances
       R_DDR |= (1<<tmpval);						// High pin on exit
       R_PORT |= (1<<tmpval);						// High pin over R_L on Vcc
@@ -719,10 +716,10 @@ uint8_t tmpval, tmpval2;
       e = LowPin;
     }
     
-    ADC_PORT = TXD_VAL;
+    ADC_PORT = 0x00;
 
 									// Test on P-JFET or leading P-MOSFET
-    ADC_DDR = (1<<LowPin) | (1<<TxD);					// Low pin (assumed drain) to ground, Tristate pin (assumed gate) still is over R_H on pluses
+    ADC_DDR = (1<<LowPin);					// Low pin (assumed drain) to ground, Tristate pin (assumed gate) still is over R_H on pluses
     tmpval = (HighPin * 2);						// necessarily because of the arrangement of the resistances
 									
     R_DDR |= (1<<tmpval);						// High pin on exit
@@ -736,8 +733,8 @@ uint8_t tmpval, tmpval2;
 									// - If it concerns a leading P-MOSFET or P-JFET, would have adcv [0] > adcv [1] its
     if(adcv[1]>(adcv[2]+100)) {
 									// - Voltage at the gate measure, for distinction between MOSFET and JFET
-      ADC_PORT = (1<<HighPin) | TXD_VAL;				// High pin firmly on pluses
-      ADC_DDR = (1<<HighPin) | (1<<TxD);				// High pin on exit
+      ADC_PORT = (1<<HighPin);				// High pin firmly on pluses
+      ADC_DDR = (1<<HighPin);				// High pin on exit
       _delay_ms(20);
       adcv[2] = ReadADC(TristatePin);					// Voltage at the assumed gate measure
       
@@ -758,8 +755,8 @@ uint8_t tmpval, tmpval2;
   tmpval = (LowPin * 2);						// necessarily because of the arrangement of the resistances
   R_DDR = (1<<tmpval);							// Low pin on exit and over R_L to ground
   R_PORT = 0;
-  ADC_DDR = (1<<HighPin) | (1<<TxD);					// High pin on exit
-  ADC_PORT = (1<<HighPin) | TXD_VAL;					// High pin to Vcc
+  ADC_DDR = (1<<HighPin);					// High pin on exit
+  ADC_PORT = (1<<HighPin);					// High pin to Vcc
   _delay_ms(5);	
 
   if(adcv[0] < 200) {							// If the Device does not have a passage between HighPin and LowPin
@@ -825,12 +822,12 @@ uint8_t tmpval, tmpval2;
       }
 
 									// Tristate (basis assumed) on pluses, to the test on npn
-      ADC_PORT = TXD_VAL;						// Low pin to ground
+      ADC_PORT = 0x00;						// Low pin to ground
       tmpval = (TristatePin * 2);					// necessarily because of the arrangement of the resistances
       tmpval2 = (HighPin * 2);						// necessarily because of the arrangement of the resistances
       R_DDR = (1<<tmpval) | (1<<tmpval2);				// High pin and Tristate pin on exit
       R_PORT = (1<<tmpval) | (1<<tmpval2);				// High pin and Tristate pin over R_L on Vcc
-      ADC_DDR = (1<<LowPin) | (1<<TxD);					// Low pin on exit
+      ADC_DDR = (1<<LowPin);					// Low pin on exit
       _delay_ms(10);
       adcv[1] = ReadADC(HighPin);					// Voltage at the High pin measure
       
@@ -858,7 +855,7 @@ uint8_t tmpval, tmpval2;
 									//  Test on Triac
 	  R_DDR = 0;
 	  R_PORT = 0;
-	  ADC_PORT = (1<<LowPin) | TXD_VAL;				// Low-Pin fest auf Plus - Low pin firmly on pluses
+	  ADC_PORT = (1<<LowPin);				// Low-Pin fest auf Plus - Low pin firmly on pluses
 	  _delay_ms(5);
 	  R_DDR = (1<<tmpval2);						// HighPin over R_L to ground
 	  _delay_ms(5);
@@ -947,15 +944,15 @@ uint8_t tmpval, tmpval2;
 	  e = LowPin;
 	}
 
-	ADC_DDR = (1<<TxD);
-	ADC_PORT = TXD_VAL;
+	ADC_DDR = 0x00;
+	ADC_PORT = 0x00;
 									// Finished
 	} else {							// Passage
 									// Test auf Diode
 	    tmpval2 = (2<<(2*HighPin));					// R_H
 	    tmpval = (1<<(2*HighPin));					// R_L
-	    ADC_PORT = TXD_VAL;
-	    ADC_DDR = (1<<LowPin) | (1<<TxD);				// Low pin to ground, High pin still is over R_L on Vcc
+	    ADC_PORT = 0x00;
+	    ADC_DDR = (1<<LowPin);				// Low pin to ground, High pin still is over R_L on Vcc
 	    DischargePin(TristatePin,1);				// Unloaded for P-channel-MOSFET
 	    _delay_ms(5);
 	    adcv[0] = ReadADC(HighPin) - ReadADC(LowPin);
@@ -1012,8 +1009,8 @@ uint8_t tmpval, tmpval2;
 									// Test on resistance
 	tmpval2 = (2<<(2*HighPin));					// R_H
 	tmpval = (1<<(2*HighPin));					// R_L
-	ADC_PORT = TXD_VAL;
-	ADC_DDR = (1<<LowPin) | (1<<TxD);				// Low pin to ground
+	ADC_PORT = 0x00;
+	ADC_DDR = (1<<LowPin);				// Low pin to ground
 	R_DDR = tmpval;							// High pin over R_L on pluses
 	R_PORT = tmpval;
 	adcv[2] = ReadADC(LowPin);
@@ -1026,8 +1023,8 @@ uint8_t tmpval, tmpval2;
 									// Measurement of the voltage difference between the positive terminal of R_L and R_H and Vcc
 	tmpval2 = (2<<(2*LowPin));					// R_H
 	tmpval = (1<<(2*LowPin));					// R_L
-	ADC_DDR = (1<<HighPin) | (1<<TxD);				// High pin on exit
-	ADC_PORT = (1<<HighPin) | TXD_VAL;				// High pin firmly on pluses
+	ADC_DDR = (1<<HighPin);				// High pin on exit
+	ADC_PORT = (1<<HighPin);				// High pin firmly on pluses
 	R_PORT = 0;
 	R_DDR = tmpval;							// Low pin over R_L to ground
 	adcv[2] += (MAX_ADC - ReadADC(HighPin));
@@ -1065,8 +1062,8 @@ uint8_t tmpval, tmpval2;
 	}
 
 	testend:
-	ADC_DDR = (1<<TxD);
-	ADC_PORT = TXD_VAL;
+	ADC_DDR = 0x00;
+	ADC_PORT = 0x00;
 	R_DDR = 0;
 	R_PORT = 0;
 }									// End of CheckPins()
@@ -1083,10 +1080,10 @@ void ReadCapacity(uint8_t HighPin, uint8_t LowPin) {
 
   tmpval2 = (2<<(2*HighPin));						// R_H
   tmpval = (1<<(2*HighPin));						// R_L
-  ADC_PORT = TXD_VAL;
+  ADC_PORT = 0x00;
   R_PORT = 0;
   R_DDR = 0;
-  ADC_DDR = (1<<LowPin) | (1<<TxD);					// Low pin to ground
+  ADC_DDR = (1<<LowPin);					// Low pin to ground
   R_DDR = tmpval2;							// HighPin over R_H to ground
   _delay_ms(5);
   adcv[0] = ReadADC(HighPin);
@@ -1140,11 +1137,11 @@ void ReadCapacity(uint8_t HighPin, uint8_t LowPin) {
     
     tmpint = 0;
     extcnt = 0;
-    ADC_DDR = 7 | (1<<TxD);						// all pins on exit and from gnd
+    ADC_DDR = 7;						// all pins on exit and from gnd
     R_PORT = tmpval;							// HighPin over R_L on pluses
     tmpval=(1<<HighPin);
     _delay_ms(2);
-    ADC_DDR = (1<<LowPin) | (1<<TxD);					// Condenser over R_L slowly load
+    ADC_DDR = (1<<LowPin);					// Condenser over R_L slowly load
     
     while (!(ADC_PIN & tmpval)) {					// Control rooms, until HighPin goes on High; Loop lasts 7 cycles
       wdt_reset();
@@ -1159,7 +1156,7 @@ void ReadCapacity(uint8_t HighPin, uint8_t LowPin) {
     }
 
     if((extcnt == 0) && (tmpint<256)) {					// Low capacity
-      ADC_DDR = (1<<LowPin) | (1<<TxD);	
+      ADC_DDR = (1<<LowPin);	
 									// with R_H measure again
       R_PORT = 0;
       tmpint = 0;
@@ -1179,16 +1176,16 @@ void ReadCapacity(uint8_t HighPin, uint8_t LowPin) {
 
       tmpint = 0;
       extcnt = 0;
-      ADC_DDR = 7 | (1<<TxD);						// all pins on exit
-      ADC_PORT = TXD_VAL;						// all pins to ground
+      ADC_DDR = 7;						// all pins on exit
+      ADC_PORT = 0x00;						// all pins to ground
       R_DDR = tmpval2;							// HighPin over R_H on exit
       R_PORT = tmpval2;							// HighPin over R_H on pluses
       _delay_ms(2);
 
       if(PartFound == PART_FET) 
-	ADC_DDR = (7 & ~tmpval) | (1<<TxD);				// - Condenser over R_H slowly load, free pin (drain) for gate capacity measurement on gnd
+	ADC_DDR = (7 & ~tmpval);				// - Condenser over R_H slowly load, free pin (drain) for gate capacity measurement on gnd
       else 
-	ADC_DDR = (1<<LowPin) | (1<<TxD);				// Condenser over R_H slowly load
+	ADC_DDR = (1<<LowPin);				// Condenser over R_H slowly load
 
       while (!(ADC_PIN & tmpval)) {					// Control rooms, until HighPin goes on High; Loop lasts 7 cycles
 	wdt_reset();
@@ -1242,15 +1239,15 @@ void ReadCapacity(uint8_t HighPin, uint8_t LowPin) {
       }
     }
 
-    ADC_DDR = 7 | (1<<TxD);						// Timeout for unloading
-    ADC_PORT = 7 | TXD_VAL;
+    ADC_DDR = 7;						// Timeout for unloading
+    ADC_PORT = 7;
     _delay_ms(10);
 									// Finished
   }
   
   end:
-  ADC_DDR =  (1<<TxD);
-  ADC_PORT = TXD_VAL;
+  ADC_DDR = 0x00;
+  ADC_PORT = 0x00;
   R_DDR = 0;
   R_PORT = 0; 
 }									// End of ReadCapacity()
@@ -1319,4 +1316,5 @@ void lcd_show_format_cap(char outval[], uint8_t strlength, uint8_t CommaPos) {
       }
     }
 }
+/* eof */
 

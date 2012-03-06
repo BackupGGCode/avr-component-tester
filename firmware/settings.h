@@ -1,4 +1,20 @@
-// AVR Component Tester settings file
+////////////////////////////////////////////
+/////
+////     AVR Component Tester
+///       BrentBXR & MickM
+// -----------------------------
+// 
+// ACT Settings Definitions ->
+//     CID: 0x9938A4E
+//     SID: 001
+//
+// $desc This file holds all the customizable settings as
+//       defines. Be very carefull when editing this file
+//       only modify this  file if you know what  you are
+//       doing.  You  have  been  warned.
+//
+//
+
 
 #ifndef _SETTINGS_H_ 
 #define _SETTINGS_H_
@@ -6,17 +22,15 @@
 
 #define MCU_STATUS_REG MCUCR
 
-#ifdef SWUART_INVERT
-	#define TXD_VAL 0						// DEFAULT - change in swuart.h
-#else
-	#define TXD_VAL (1<<TxD)
-#endif
-
 
 // Define the probe aliases.
 #define PIN1_ALIAS 'Y' //ASCII
 #define PIN2_ALIAS 'B' //ASCII
 #define PIN3_ALIAS 'G' //ASCII
+
+// Misc. LCD Settings
+// LCD_SLOW_SEND if defined will put a small delay between LCD commands
+#define LCD_SLOW_SEND
 
 
 // Defined Settings 
@@ -144,3 +158,4 @@
 
 
 #endif
+/* eof */

@@ -58,7 +58,7 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = main.o lcd-routines.o swuart.o
+OBJECTS = main.o lcd-routines.o
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
@@ -71,9 +71,6 @@ main.o: ./main.c
 	$(CC) $(INCLUDES) $(CFLAGS) -D$(UI_LANGUAGE) -c  $<
 
 lcd-routines.o: ./lcd-routines.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-	
-swuart.o: ./swuart.S
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

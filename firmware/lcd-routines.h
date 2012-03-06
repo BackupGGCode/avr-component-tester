@@ -1,19 +1,41 @@
-//Control of a HD44780 compatible LCD in the 4-Bit-Interface
+////////////////////////////////////////////
+/////
+////     AVR Component Tester
+///       BrentBXR & MickM
+// -----------------------------
+// 
+// LCD Routines ->
+//     CID: 0x9938A4E
+//     SID: 001
 //
-// http://www.mikrocontroller.net/articles/AVR-GCC-Tutorial
+// $desc This file contains all the functions needed
+//       to control a standard HDD chipset 2x16 char
+//       LCD. 
 //
-//LCD
+//  ## This file is part of the original project and has ##
+//  ##         been highly modified for our needs.       ##
+//
+
+#ifndef _LCDROUTINES_H_ 
+#define _LCDROUTINES_H_
+
+
+
 void lcd_data(unsigned char temp1);
 void lcd_command(unsigned char temp1);
 void lcd_send(unsigned char data);
 void lcd_string(char *data);
 void lcd_enable(void);
-void lcd_init(void);
 void lcd_clear(void);
+void lcd_init(void);
 void lcd_eep_string(const unsigned char *data);
-										//Software-UART
-extern void uart_putc(uint8_t data);
-void uart_newline(void);
+
+/*
+	#define lcd_data(x) LCD_PORT |= (1<<LCD_RS); lcd_send(x)
+	#define lcd_command(x) LCD_PORT &= ~(1<<LCD_RS); lcd_send(x)
+	#define lcd_clear() lcd_command(CLEAR_DISPLAY); _delay_ms(5)
+*/
+
 										//LCD-Instructions
 #define CMD_SetEntryMode         0x04
 #define CMD_SetDisplayAndCursor  0x08
@@ -41,3 +63,6 @@ void uart_newline(void);
 #define LCD_DDR       DDRD
 #define LCD_RS        PD4
 #define LCD_EN1       PD5
+
+#endif
+/* eof */
