@@ -54,37 +54,43 @@
 
 #include "settings.h"
 
+// *########################################################################################
 
-	uint8_t CapTestMode EEMEM = 0b00100010;				// 34 0x22, last used EEPROM address 0x15A, Cap test type, pins to use
-														// DEFAULT  0x22 = All 6 Cap Tests, 1st 0, 2nd 2
-
-	uint8_t RFU1 EEMEM = 0;						// 0x00 [RESERVED EEPROM SPACE]
-	uint8_t RFU2 EEMEM = 0;						// 0x00 [RESERVED EEPROM SPACE]
-	uint8_t RFU3 EEMEM = 0;						// 0x00 [RESERVED EEPROM SPACE]
-
-	unsigned int R_L_VAL EEMEM = SMALL_R_VALUE;			// R_L; 750 0x2EE
-	unsigned int R_H_VAL EEMEM = LARGE_R_VALUE;			// R_H; 5000 0x1388
+	// Initial Configuration
 	
-	unsigned int H_CAPACITY_FACTOR EEMEM = SMALL_CAP_VALUE;		// 218 0xDA Capacitor calibration numbers for H and L value accuracy
-	unsigned int L_CAPACITY_FACTOR EEMEM = LARGE_CAP_VALUE;		// 167 0xA7
+	uint8_t CapTestMode 			EEMEM 	= V_CAPTESTMODE;	
+	
+	unsigned int F_VER 				EEMEM 	= _FIRMWARE_VERSION_;
+	unsigned int F_REV 				EEMEM 	= _FIRMWARE_REVISION_;
+	unsigned int H_REV 				EEMEM 	= _HARDWARE_REVISION_;
 
+	unsigned int R_L_VAL 			EEMEM 	= SMALL_R_VALUE;
+	unsigned int R_H_VAL 			EEMEM 	= LARGE_R_VALUE;
+	
+	unsigned int H_CAPACITY_FACTOR 	EEMEM = SMALL_CAP_VALUE;
+	unsigned int L_CAPACITY_FACTOR 	EEMEM = LARGE_CAP_VALUE;
 
 
 // *########################################################################################
 
 	// Words, messages, and strings:        
-	unsigned char StartupMessage[]	EEMEM = "ACT v1.0   ";
+	
+	
+	unsigned char StartupMessage[]	EEMEM = "ACT v1.2   ";
 	unsigned char BatMode[] 		EEMEM = "[BAT]";
 	unsigned char PwrMode[]			EEMEM = "[PWR]";
-	unsigned char TestRunning[]     EEMEM = "Testing...";
+	unsigned char TestRunning[]     EEMEM = "Testing   ->";
+	unsigned char TestCapV[]		EEMEM = "Measuring ->";
 	unsigned char Bat[]             EEMEM = "Battery ";
 	unsigned char BatWeak[]         EEMEM = "weak";
 	unsigned char BatEmpty[]        EEMEM = "empty!";
-	unsigned char TestFailed1[]     EEMEM = "No, unknown, or";
-	unsigned char TestFailed2[]     EEMEM = "damaged ";
-	unsigned char Bauteil[]         EEMEM = "part";
-	unsigned char Unknown[]         EEMEM = " unknown";
-	unsigned char OrBroken[] 		EEMEM = "or damaged ";
+
+	unsigned char TestFailed1[]     EEMEM = "Unknown, Damaged";
+	unsigned char TestFailed2[]     EEMEM = "or Nothing found";
+
+	unsigned char BadResult1[]		EEMEM = " Part's Unknown";
+	unsigned char BadResult2[]		EEMEM = " or Damaged: ";
+
 	unsigned char TestTimedOut[] 	EEMEM = "Timeout!";
 	
 	// Components
@@ -176,7 +182,7 @@ unsigned int 	adcv[4];
 unsigned int 	gthvoltage;				// Gate threshold voltage
 char 			outval2[6];
 
-
+#ifdef ENABLE_PIN_ALIAS
 uint8_t GetPinAlias(uint8_t nPin)				// GetPinAlias allows the user to define his own
 {												// alias for each pin #; defined in 'settings.h'
    switch(nPin) {
@@ -192,6 +198,9 @@ uint8_t GetPinAlias(uint8_t nPin)				// GetPinAlias allows the user to define hi
    }
    return nPin;
 }
+#else
+	#define GetPinAlias(x) (x)
+#endif
 
 
 int main(void) {
@@ -214,7 +223,7 @@ int main(void) {
   wdt_disable();										// Disable watch dog timer.
   
   if(MCU_STATUS_REG & (1<<WDRF)) {						// Examine for Watchdog RESETs That enters, if the Watchdog 2s were not put back Can occur, 
-                                                        // if the program in a continuous loop " itself; tangled" has.
+    lcd_clear();                                                    // if the program in a continuous loop " itself; tangled" has.
     lcd_eep_string(TestTimedOut);						// Message - "Timeout!"
     _delay_ms(3000);                                	// Wait 3 sec
 	wdt_enable(WDTO_2S);								// Wait two seconds; if on power it will reset; on battery it will turn itself off
@@ -304,7 +313,6 @@ start:													// re-entry point, if button is re-pressed
   CheckPins(TP3, TP1, TP2);							//	   Almost there!
   UpdateProgress("99%");							// Testing Completed or 99%
   
-  
 
 //---------------------------------------------CAPACITOR---------------------------------------
 									// Separate measurement to the test on condenser
@@ -319,12 +327,27 @@ start:													// re-entry point, if button is re-pressed
       ReadCapacity(cp1, cp2);						// No - just read the pins both ways.
       ReadCapacity(cp2, cp1);
     } else {								// DEFAULT ctmode == 0x02  to do all tests
+	Line2();
+	lcd_eep_string(TestCapV);
+	UpdateProgress("00%");
+	
 	ReadCapacity(TP3, TP1);
+	UpdateProgress("16%");
+	
 	ReadCapacity(TP3, TP2);
+	UpdateProgress("33%");
+	
 	ReadCapacity(TP2, TP3);
+	UpdateProgress("50%");
+	
 	ReadCapacity(TP2, TP1);
+	UpdateProgress("66%");
+	
 	ReadCapacity(TP1, TP3);
+	UpdateProgress("83%");
+	
 	ReadCapacity(TP1, TP2);
+	UpdateProgress("99%");
       }
    }
 
@@ -628,18 +651,17 @@ start:													// re-entry point, if button is re-pressed
 	      }
 
 //---------------------------------------------NOT-FOUND-OR-DAMAGED---------------------------------------------------------	
-		if(NumOfDiodes == 0) {					// No diodes found
-		lcd_eep_string(TestFailed1);				// Message - "No, unknown, or€" 
-		Line2();						// Start second line
-		lcd_eep_string(TestFailed2);				// Message - "damaged €€€€"
-		lcd_eep_string(Bauteil);				// Message - "part€€€€€€"
-		} else {
-		  lcd_eep_string(Bauteil);				// Message - "part€€€€€€"
-		  lcd_eep_string(Unknown);				// Message - " unknown€"
-		  Line2();						// Start second line
-		  lcd_eep_string(OrBroken);				// Message - "or damaged €€"
-		  lcd_data(NumOfDiodes + 48);
-		  lcd_data(LCD_CHAR_DIODE);
+
+		if(NumOfDiodes == 0) {						// Nothing found. Tell user.
+				lcd_eep_string(TestFailed1);
+				Line2();
+				lcd_eep_string(TestFailed2);
+			} else {								// Data found but bad result or no positive ident
+				lcd_eep_string(BadResult1);
+				Line2();
+				lcd_eep_string(BadResult2);
+				lcd_data(NumOfDiodes + ASCII_0);
+				lcd_data(LCD_CHAR_DIODE);
 		}
 
 		end:
@@ -656,11 +678,14 @@ start:													// re-entry point, if button is re-pressed
 		  _delay_ms(1);						// 1mS 10,000 times = 10 seconds
 		}
 
-	ON_PORT &= ~(1<<ON_PIN);					// Switch off
-	wdt_disable();							// Watchdog out
-									// Continuous loop, no timer
+	if(PowerMode==PWR_9V) {				// If in battery mode; try to turn off; otherwise wait for a reset
+		POWER_OFF();
+	}
+	
+	wdt_disable();						// Watchdog out
+										// Continuous loop, no timer
   while(1) {
-    if(!(ON_PIN_REG & (1<<RST_PIN)))					// only one reaches, if the automatic disconnection was not inserted
+    if(!(RESET_GET()))					// only one reaches, if the automatic disconnection was not inserted
       goto start;
   }
   

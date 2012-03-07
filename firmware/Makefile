@@ -8,8 +8,8 @@
 PROJECT = TransistorTestNew
 UI_LANGUAGE = LANG_ENGLISH
 MCU = atmega328p
+F_CPU = 1000000UL
 TARGET = TransistorTestNew.elf
-TARGET_BASE = TransistorTestNew
 CC = avr-gcc
 
 # programmer type
@@ -25,8 +25,8 @@ AVRDUDE_PORT = $(PORT)
 
 AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -P $(AVRDUDE_PORT) -B 5 
 
-AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET_BASE).hex:a
-AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET_BASE).eep:a
+AVRDUDE_WRITE_FLASH = -U flash:w:$(PROJECT).hex:a
+AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(PROJECT).eep:a
 AVRDUDE_WRITE_FUSES = -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m
 
 CPP = avr-g++
@@ -36,7 +36,7 @@ COMMON = -mmcu=$(MCU)
 
 ## Compile options common for all C compilation units.
 CFLAGS = $(COMMON)
-CFLAGS += -Wall -gdwarf-2 -std=gnu99 -DF_CPU=1000000UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+CFLAGS += -Wall -gdwarf-2 -std=gnu99 -DF_CPU=$(F_CPU) -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d
 
 ## Assembly specific flags

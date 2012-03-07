@@ -31,19 +31,24 @@ void lcd_init(void);
 void lcd_eep_string(const unsigned char *data);
 
 /*
+	// With UART missing these functions can simply be defines; but for now its OK. 
+	// Later to save space we might utilize these		-BXR
+	
 	#define lcd_data(x) LCD_PORT |= (1<<LCD_RS); lcd_send(x)
 	#define lcd_command(x) LCD_PORT &= ~(1<<LCD_RS); lcd_send(x)
 	#define lcd_clear() lcd_command(CLEAR_DISPLAY); _delay_ms(5)
 */
 
-										//LCD-Instructions
+														//LCD-Instructions
 #define CMD_SetEntryMode         0x04
 #define CMD_SetDisplayAndCursor  0x08
 #define CMD_SetIFOptions         0x20
-#define CMD_SetCGRAMAddress      0x40    					// for Custom characters
-#define CMD_SetDDRAMAddress      0x80    					// set to the cursor
+#define CMD_SetCGRAMAddress      0x40    				// for Custom characters
+#define CMD_SetDDRAMAddress      0x80    				// set to the cursor
 
-										//Macros for LCD
+#define CLEAR_DISPLAY 0x01								// clear display
+
+														//Macros for LCD
 #define Line1() SetCursor(1,0)							//jump to start of first line
 #define Line2() SetCursor(2,0)							//jump to start of second line
 
@@ -51,14 +56,13 @@ void lcd_eep_string(const unsigned char *data);
 
 #define UpdateProgress(x) SetCursor(2,13); lcd_string(x)
 
-#define LCDLoadCustomChar() lcd_command(CMD_SetCGRAMAddress)			//Custom chars
-#define LCD_CHAR_OMEGA  244							//Omega character
-#define LCD_CHAR_U  228								//?-indication
-#define LCD_CHAR_DIODE  0							//Diode icon; Custom character
+#define LCDLoadCustomChar() lcd_command(CMD_SetCGRAMAddress)		//Custom chars
+#define LCD_CHAR_OMEGA  244											//Omega character
+#define LCD_CHAR_U  228												//?-indication
+#define LCD_CHAR_DIODE  0											//Diode icon; Custom character
   
-										// LCD Instructions
-#define CLEAR_DISPLAY 0x01
-										// Pin allocation for the LCD, to used pins adapt
+
+														// LCD Bit Registers
 #define LCD_PORT      PORTD
 #define LCD_DDR       DDRD
 #define LCD_RS        PD4

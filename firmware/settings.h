@@ -21,14 +21,29 @@
 
 
 	#define MCU_STATUS_REG MCUCR
+	
+	#define _PROJECT_NAME_ "ACT"
+	#define _PROJECT_FULLNAME_ "AVR Component Tester"
+	
+	#define _FIRMWARE_VERSION_ 1
+	#define _FIRMWARE_REVISION_ 2
+	#define _HARDWARE_REVISION_ 2
 
 
 //////// [ Override Pin# with Custom Alias ] ///////////////////////////////////////////////////////////////////
 
+	//// ENABLE_PIN_ALIAS if defined then making a probe alias is enabled
+	#define ENABLE_PIN_ALIAS
+	
 	//// Aliases /////////////////////////
-	#define PIN1_ALIAS 'Y' //ASCII
-	#define PIN2_ALIAS 'B' //ASCII
-	#define PIN3_ALIAS 'G' //ASCII
+	#ifdef ENABLE_PIN_ALIAS
+		#define PIN1_ALIAS 'Y' // [pFLAG]
+		#define PIN2_ALIAS 'B' 
+		#define PIN3_ALIAS 'G'
+		//#define PIN1_ALIAS '1'
+		//#define PIN2_ALIAS '2'
+		//#define PIN3_ALIAS '3'	
+	#endif
 
 //////// [ Override Pin# with Custom Alias ] ///////////////////////////////////////////////////////////////////
 
@@ -39,7 +54,7 @@
 //////// [ Probe and Input Registers ] /////////////////////////////////////////////////////////////////////////
 
 	//// Defined Settings 
-	#define ADC_PORT PORTC							// Use port C for A to D inputs
+	#define ADC_PORT PORTC						// Use port C for A to D inputs
 	#define ADC_DDR DDRC
 	#define ADC_PIN PINC
 	#define TP1 PC0								// AVR pin 23 probe.
@@ -55,11 +70,15 @@
 	#define BAT_DEAD 650							// 875  0x036B  7.2V dead Battery, was 600
 	#define LARGE_R_VALUE 4700						// 
 	#define SMALL_R_VALUE 680						// 
-	#define ASCII_1 49							// Ascii one.
+	#define ASCII_1 49								// Ascii one.
+	#define ASCII_0 48								// Ascii zero.
 	#define NORMAL_CAP_TESTS 1						// Just do normal Cap test, compare to CapTestMode in EEPROM, 2 to enable all
 	#define HALF_ADC_RANGE 512						// midpoint of ADC
 	#define MAX_ADC 1023							// Maximum ADC count
 	#define WDT_enabled  							// Watchdog active for normal use, disable for debug
+	
+	#define V_CAPTESTMODE 0b00100010				// 34 0x22, last used EEPROM address 0x15A, Cap test type, pins to use
+													// DEFAULT  0x22 = All 6 Cap Tests, 1st 0, 2nd 2
 
 
 //////// [ Usfull Bit Control Defines ] ///////////////////////////////////////////////////////////////////////
@@ -140,6 +159,9 @@
 	
 	//POWER_GET() 	= Get the ON_PIN logic
 	#define POWER_GET() CHECKBIT(ON_PIN_REG,ON_PIN)
+	
+	//RESET_GET()	= Get the reset's logic
+	#define RESET_GET() CHECKBIT(ON_PIN_REG,RST_PIN)
 
 
 //////// [ Part/Component Unique Identifying Defines ] /////////////////////////////////////////////////////////////////
