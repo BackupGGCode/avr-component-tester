@@ -1,0 +1,20 @@
+# README #
+## Nothing to see here.. ##
+
+The firmware was specificly designed to on an Atmega328p but really;
+any 28pin atmega 8k and up will work; and as long as your utilizing
+winavr just make sure you include its IO header file; you should be
+able to upload the source no problem. Ensure to double check the
+pinout and make changes as needed.
+
+At some point I will most likly include differnt pre-compiled files
+for multiple atmega's for the public, depending on if there is any
+demand at all. Most likly there will be none, as its really just a
+personal project.
+
+I also have some left-over PCBs; so if your interested just contact
+BrentBXR and I might be able to mail you one. As long as you promise
+to build it up, and enjoy it. I wont send somone a PCB just so they
+can have a PCB laying around...
+
+Thanks -BrentBXR [@gmail]
