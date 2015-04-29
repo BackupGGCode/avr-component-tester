@@ -9,7 +9,7 @@ At the moment there is not much different then the original; other then we took 
 
 Only reason I made this page was to store our updates to a public SVN.
 
-Also see my [readme](https://raw.githubusercontent.com/BackupGGCode/avr-component-tester/master/README) file.
+Also see my [readme](https://github.com/BackupGGCode/avr-component-tester/blob/master/README) file.
 
 ---
 
