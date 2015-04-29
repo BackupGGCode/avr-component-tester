@@ -1,10 +1,4 @@
 # AVR Component Tester #
-## Resurrection ##
-Version 1 BETA
-
-
-Anyone want a [Free PCB](http://code.google.com/p/avr-component-tester/wiki/FreePCB)?
-
 
 ### DESCRIPTION ###
 We really liked the original project; so we are bringing it back as ACT. Mainly for ourselves but anyone interested is welcome to build there own.
@@ -15,7 +9,7 @@ At the moment there is not much different then the original; other then we took 
 
 Only reason I made this page was to store our updates to a public SVN.
 
-Also see my [readme](http://code.google.com/p/avr-component-tester/wiki/README) file.
+Also see my [readme](https://raw.githubusercontent.com/BackupGGCode/avr-component-tester/master/README) file.
 
 ---
 
